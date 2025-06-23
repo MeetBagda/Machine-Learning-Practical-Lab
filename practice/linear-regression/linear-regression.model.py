@@ -19,8 +19,10 @@ b = (sum_y - m * sum_x) / n
 print(f"Slope (m): {m}")
 print(f"Intercept (b): {b}")
 
+
 def predict(x_val):
     return m * x_val + b
+
 
 for xi in x:
     print(f"x={xi} => y={predict(xi):.2f}")
