@@ -35,3 +35,24 @@ class IrisNN(nn.Module):
         x = torch.relu(self.fc1(x))
         x = self.fc2(x)  # raw scores (logits) → handled by loss fn
         return x
+
+model = IrisNN()
+criterion = nn.CrossEntropyLoss()  # multi-class classification
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+
+epochs = 100
+for epoch in range(epochs):
+    optimizer.zero_grad()
+    outputs = model(X_train)
+    loss = criterion(outputs, y_train)
+    loss.backward()
+    optimizer.step()
+
+    if (epoch + 1) % 10 == 0:
+        print(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}")
+
+with torch.no_grad():
+    test_outputs = model(X_test)
+    _, predicted = torch.max(test_outputs, 1)  # pick class with highest score
+    accuracy = (predicted == y_test).sum().item() / y_test.size(0)
+    print(f"Test Accuracy: {accuracy * 100:.2f}%")
