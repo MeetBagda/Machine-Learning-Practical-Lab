@@ -18,3 +18,7 @@ print(f"Features shape : {x.shape}")
 print(f"Label shape : {y.shape}")
 print(f"Target Classes : {fashionmnist.targets}")
 
+# Normalize the features
+x = x.float() / 255.0 # Convert to float and then normalize to [0, 1]
+print(f"Features after normalization (min): {x.min()}")
+print(f"Features after normalization (max): {x.max()}")
