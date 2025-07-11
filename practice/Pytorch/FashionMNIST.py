@@ -8,27 +8,45 @@ from sklearn.preprocessing import LabelEncoder
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import torchvision.datasets as datasets
+import torchvision.transforms as transforms
 
 # load the Fashion-MNIST
 print("Loading dataset")
-fashionmnist = torchvision.datasets.FashionMNIST(train=True)
-x=fashionmnist.data
-y=fashionmnist.targets
-print(f"Features shape : {x.shape}")
-print(f"Label shape : {y.shape}")
-print(f"Target Classes : {fashionmnist.targets}")
 
-# Normalize the features
-x = x.float() / 255.0 # Convert to float and then normalize to [0, 1]
-print(f"Features after normalization (min): {x.min()}")
-print(f"Features after normalization (max): {x.max()}")
+# Define a transformation to convert to tensor and normalize
+# This is the recommended way to handle normalization with torchvision datasets
+transform = transforms.Compose([
+    transforms.ToTensor(), # Converts PIL Image or numpy.ndarray to FloatTensor and scales to [0.0, 1.0]
+    # If you need further normalization (e.g., mean/std based for pre-trained models like ResNet), you'd add it here:
+    # transforms.Normalize((0.5,), (0.5,)) # Example for [-1, 1] range
+])
 
-# splitting
-print("Splittin the dataset")
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
-print(f"Train shape: {x_train.shape}, Test Shape: {x_test.shape}")
+print("Loading dataset")
+fashionmnist_train = datasets.FashionMNIST(
+    root='./data',      # Where to store the dataset
+    train=True,         # Get the training split
+    download=True,      # Download if not present
+    transform=transform # Apply the defined transformations
+)
 
-# convert pytorch tensors
+# If you also need the test set:
+fashionmnist_test = datasets.FashionMNIST(
+    root='./data',
+    train=False,        # Get the test split
+    download=True,
+    transform=transform
+)
+
+x_train = fashionmnist_train.data
+y_train = fashionmnist_train.targets
+print(f"Features shape (train): {x_train.shape}")
+print(f"Label shape (train): {y_train.shape}")
+
+x_test = fashionmnist_test.data
+y_test = fashionmnist_test.targets
+print(f"Features shape (test): {x_test.shape}")
+print(f"Label shape (test): {y_test.shape}")# convert pytorch tensors
 print("Converting to pytorch tensors...")
 x_train = torch.tensor(x_train, dtype=torch.float32)
 x_test = torch.tensor(x_test, dtype=torch.float32)
@@ -41,4 +59,4 @@ print("Tensor conversion completed.")
 # class FashionMNIST(nn.module):
 #     def __init__(self):
 #         super(FashionMNIST, self).__init__()
-        # self.fc1 = nn.Linear()
+#         self.fc1 = nn.Linear()
