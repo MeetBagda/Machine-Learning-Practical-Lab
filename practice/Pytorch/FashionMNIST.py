@@ -74,9 +74,18 @@ y_train = torch.tensor(y_train, dtype=torch.long)
 y_test= torch.tensor(y_test,dtype=torch.long)
 print("Tensor conversion completed.")
 
-# Define NN
+class FashionMNISTModel(nn.Module): # Note: nn.Module, not nn.module
+    def __init__(self):
+        super(FashionMNISTModel, self).__init__()
+        # Input: 28x28 images = 784 features when flattened
+        self.fc1 = nn.Linear(in_features=28*28, out_features=128) # First hidden layer
+        self.relu = nn.ReLU() # Activation function
+        self.fc2 = nn.Linear(in_features=128, out_features=10) # Output layer (10 classes)
 
-# class FashionMNIST(nn.module):
-#     def __init__(self):
-#         super(FashionMNIST, self).__init__()
-#         self.fc1 = nn.Linear()
+    def forward(self, x):
+        # Flatten the image: (batch_size, 1, 28, 28) -> (batch_size, 784)
+        x = x.view(x.size(0), -1) # x.size(0) is batch_size
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        return x # For classification, often logits are returned, then softmax is applied in loss/prediction
