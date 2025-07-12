@@ -95,3 +95,29 @@ model = FashionMNISTModel()
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.01)
 print("Model initialized.")
+
+# 🔹 Training loop
+print("\n🚀 Starting training...")
+epochs = 100
+for epoch in range(epochs):
+    optimizer.zero_grad()  # Reset gradients
+    outputs = model(x_train)  # Forward pass
+    loss = criterion(outputs, y_train)  # Compute loss
+    loss.backward()  # Backward pass (compute gradients)
+    optimizer.step()  # Update weights
+
+    if (epoch + 1) % 10 == 0:
+        print(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}")
+
+# 🔹 Testing (evaluation)
+print("\n✅ Evaluating model on test data...")
+with torch.no_grad():
+    test_outputs = model(x_test)
+    print("Raw model outputs (logits):\n", test_outputs)
+
+    _, predicted = torch.max(test_outputs, 1)
+    print("Predicted classes:\n", predicted)
+    print("Actual classes:\n", y_test)
+
+    accuracy = (predicted == y_test).sum().item() / y_test.size(0)
+    print(f"\n🎯 Test Accuracy: {accuracy * 100:.2f}%")
