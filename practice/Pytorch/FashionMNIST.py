@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torchvision.datasets
+import torch.optim as optim
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -89,3 +89,9 @@ class FashionMNISTModel(nn.Module): # Note: nn.Module, not nn.module
         x = self.relu(x)
         x = self.fc2(x)
         return x # For classification, often logits are returned, then softmax is applied in loss/prediction
+    
+print("\n🔹 Initializing model, loss function, and optimizer...")
+model = FashionMNISTModel()
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+print("Model initialized.")
