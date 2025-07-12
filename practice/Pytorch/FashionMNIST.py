@@ -38,6 +38,26 @@ test_dataset = datasets.FashionMNIST(
     transform=transform
 )
 
+# Create DataLoaders
+# batch_size is a hyperparameter you can tune
+batch_size = 64
+
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+print(f"Number of training batches: {len(train_loader)}")
+print(f"Number of test batches: {len(test_loader)}")
+
+# Example of how to get a batch (for checking)
+for images, labels in train_loader:
+    print(f"Batch images shape: {images.shape}") # Should be [batch_size, 1, 28, 28]
+    print(f"Batch images dtype: {images.dtype}") # Should be torch.float32
+    print(f"Batch images min: {images.min()}")   # Should be around 0.0
+    print(f"Batch images max: {images.max()}")   # Should be around 1.0
+    print(f"Batch labels shape: {labels.shape}") # Should be [batch_size]
+    print(f"Batch labels dtype: {labels.dtype}") # Should be torch.int64 (or torch.long)
+    break # Just get one batch to inspect
+
 x_train = train_dataset.data
 y_train = train_dataset.targets
 print(f"Features shape (train): {x_train.shape}")
