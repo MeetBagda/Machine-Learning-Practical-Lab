@@ -10,6 +10,7 @@ import seaborn as sns
 import pandas as pd
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 
 # load the Fashion-MNIST
 print("Loading dataset")
@@ -23,28 +24,27 @@ transform = transforms.Compose([
 ])
 
 print("Loading dataset")
-fashionmnist_train = datasets.FashionMNIST(
-    root='./data',      # Where to store the dataset
-    train=True,         # Get the training split
-    download=True,      # Download if not present
+train_dataset = datasets.FashionMNIST(
+    root='./data',
+    train=True,
+    download=True,
     transform=transform # Apply the defined transformations
 )
 
-# If you also need the test set:
-fashionmnist_test = datasets.FashionMNIST(
+test_dataset = datasets.FashionMNIST(
     root='./data',
-    train=False,        # Get the test split
+    train=False,
     download=True,
     transform=transform
 )
 
-x_train = fashionmnist_train.data
-y_train = fashionmnist_train.targets
+x_train = train_dataset.data
+y_train = train_dataset.targets
 print(f"Features shape (train): {x_train.shape}")
 print(f"Label shape (train): {y_train.shape}")
 
-x_test = fashionmnist_test.data
-y_test = fashionmnist_test.targets
+x_test = test_dataset.data
+y_test = test_dataset.targets
 print(f"Features shape (test): {x_test.shape}")
 print(f"Label shape (test): {y_test.shape}")# convert pytorch tensors
 print("Converting to pytorch tensors...")
