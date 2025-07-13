@@ -68,7 +68,7 @@ print("Model initialized.")
 
 # --- Training loop (Crucially using DataLoaders) ---
 print("\n🚀 Starting training...")
-epochs = 50
+epochs = 45
 
 for epoch in range(epochs):
     model.train() # Set model to training mode (important for dropout/batchnorm)
