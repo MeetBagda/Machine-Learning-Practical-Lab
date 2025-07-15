@@ -106,3 +106,58 @@ def prepare_data(data_dir, image_size=32, batch_size=32): # Default image_size c
 
     return train_loader, val_loader, num_classes, class_names
 
+# --- 3. Training Function ---
+def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device='cpu'):
+    model.to(device) # Move model to the specified device (CPU or GPU)
+
+    train_losses = []
+    val_losses = []
+    val_accuracies = []
+
+    for epoch in range(num_epochs):
+        model.train() # Set model to training mode
+        running_loss = 0.0
+        for i, (inputs, labels) in enumerate(train_loader):
+            inputs, labels = inputs.to(device), labels.to(device) # Move data to device
+
+            optimizer.zero_grad() # Zero the parameter gradients
+
+            outputs = model(inputs) # Forward pass
+            loss = criterion(outputs, labels) # Calculate loss
+            loss.backward() # Backward pass (compute gradients)
+            optimizer.step() # Update model parameters
+
+            running_loss += loss.item() * inputs.size(0) # Accumulate loss
+
+        epoch_train_loss = running_loss / len(train_loader.dataset)
+        train_losses.append(epoch_train_loss)
+
+        # --- Validation Step ---
+        model.eval() # Set model to evaluation mode
+        val_loss = 0.0
+        correct_predictions = 0
+        total_samples = 0
+        with torch.no_grad(): # Disable gradient calculation for validation
+            for inputs, labels in val_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                val_loss += loss.item() * inputs.size(0)
+
+                _, predicted = torch.max(outputs.data, 1) # Get the class with the highest probability
+                total_samples += labels.size(0)
+                correct_predictions += (predicted == labels).sum().item()
+
+        epoch_val_loss = val_loss / len(val_loader.dataset)
+        val_accuracy = 100 * correct_predictions / total_samples
+        val_losses.append(epoch_val_loss)
+        val_accuracies.append(val_accuracy)
+
+        print(f'Epoch {epoch+1}/{num_epochs}, '
+              f'Train Loss: {epoch_train_loss:.4f}, '
+              f'Val Loss: {epoch_val_loss:.4f}, '
+              f'Val Accuracy: {val_accuracy:.2f}%')
+
+    print('Finished Training')
+    return train_losses, val_losses, val_accuracies
