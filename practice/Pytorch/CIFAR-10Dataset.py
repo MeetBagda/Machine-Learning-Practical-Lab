@@ -161,3 +161,105 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 
     print('Finished Training')
     return train_losses, val_losses, val_accuracies
+
+# --- 4. Main Execution Block ---
+if __name__ == "__main__":
+    # Check for GPU availability
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    # --- Configuration ---
+    # Data will be downloaded to this directory
+    DATA_DIR = './data_cifar10' # Changed to a new directory for CIFAR-10
+    IMAGE_SIZE = 32 # CIFAR-10 images are 32x32 pixels
+    BATCH_SIZE = 16 # Number of images processed at once
+    NUM_EPOCHS = 5 # Number of times to iterate over the entire dataset
+    LEARNING_RATE = 0.001 # Step size for the optimizer
+
+    # Prepare data loaders (will download CIFAR-10 if not present)
+    train_loader, val_loader, num_classes, class_names = prepare_data(DATA_DIR, IMAGE_SIZE, BATCH_SIZE)
+
+    # Initialize the model
+    model = SimpleCNN(num_classes=num_classes)
+
+    # Define Loss Function and Optimizer
+    # CrossEntropyLoss is suitable for multi-class classification
+    criterion = nn.CrossEntropyLoss()
+    # Adam optimizer is a good general-purpose optimizer
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+    # Train the model
+    print("\n--- Starting Model Training ---")
+    train_losses, val_losses, val_accuracies = train_model(
+        model, train_loader, val_loader, criterion, optimizer, NUM_EPOCHS, device
+    )
+
+    # --- Plotting Training Results ---
+    plt.figure(figsize=(12, 5))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(train_losses, label='Training Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.title('Loss over Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+
+    plt.subplot(1, 2, 2)
+    plt.plot(val_accuracies, label='Validation Accuracy', color='orange')
+    plt.title('Validation Accuracy over Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy (%)')
+    plt.legend()
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+    # --- Simple Test/Prediction Example (using a few validation images) ---
+    print("\n--- Making a few predictions on validation set ---")
+    model.eval() # Set model to evaluation mode
+    dataiter = iter(val_loader)
+    images, labels = next(dataiter) # Get a batch of images and labels
+    images, labels = images.to(device), labels.to(device)
+
+    # Get predictions
+    outputs = model(images)
+    _, predicted = torch.max(outputs.data, 1)
+
+    print('GroundTruth: ', ' '.join(f'{class_names[labels[j]]:5s}' for j in range(4)))
+    print('Predicted:   ', ' '.join(f'{class_names[predicted[j]]:5s}' for j in range(4)))
+
+    # Display some images with predictions (requires matplotlib)
+    # Function to unnormalize and show an image
+    def imshow(inp, title=None):
+        """Imshow for Tensor."""
+        inp = inp.cpu().numpy().transpose((1, 2, 0))
+        # CIFAR-10 specific mean and std for unnormalization
+        mean = np.array([0.4914, 0.4822, 0.4465])
+        std = np.array([0.2023, 0.1994, 0.2010])
+        inp = std * inp + mean
+        inp = np.clip(inp, 0, 1)
+        plt.imshow(inp)
+        if title is not None:
+            plt.title(title)
+        plt.pause(0.001)  # pause a bit so that plots are updated
+
+    fig = plt.figure(figsize=(10, 8))
+    for j in range(min(4, len(images))): # Display first 4 images
+        ax = fig.add_subplot(1, 4, j + 1, xticks=[], yticks=[])
+        imshow(images.cpu()[j], title=f'{class_names[predicted[j]]} (True: {class_names[labels[j]]})')
+    plt.show()
+
+    # --- Saving and Loading the Model ---
+    model_path = 'cifar10_image_classifier_model.pth' # Changed model filename
+    torch.save(model.state_dict(), model_path)
+    print(f"\nModel saved to {model_path}")
+
+    # To load the model later:
+    # loaded_model = SimpleCNN(num_classes=num_classes)
+    # loaded_model.load_state_dict(torch.load(model_path))
+    # loaded_model.eval() # Set to evaluation mode after loading
+    # print(f"Model loaded from {model_path}")
+
