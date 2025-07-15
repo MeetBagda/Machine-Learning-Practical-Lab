@@ -66,3 +66,43 @@ class SimpleCNN(nn.Module):
         # Pass through the fully connected layer
         x = self.fc(x)
         return x
+
+
+# --- 2. Data Preparation (Transforms and Loaders) ---
+def prepare_data(data_dir, image_size=32, batch_size=32): # Default image_size changed to 32 for CIFAR-10
+    # Define transformations for the training data
+    # RandomCrop and RandomHorizontalFlip are common augmentations for CIFAR-10
+    # ToTensor converts PIL Image or numpy.ndarray to torch.FloatTensor
+    # Normalize with CIFAR-10 specific mean and standard deviation
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding=4), # Pad and then randomly crop back to 32x32
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), # CIFAR-10 mean/std
+    ])
+
+    # Define transformations for the validation/test data (no augmentation)
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), # CIFAR-10 mean/std
+    ])
+
+    # Load CIFAR-10 datasets. 'download=True' will download the dataset if not present.
+    # 'root' specifies where the data will be stored.
+    train_dataset = datasets.CIFAR10(root=data_dir, train=True, download=True, transform=transform_train)
+    val_dataset = datasets.CIFAR10(root=data_dir, train=False, download=True, transform=transform_test)
+
+    # Create data loaders
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+
+    # CIFAR-10 has 10 classes
+    num_classes = 10
+    class_names = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+
+    print(f"Found {num_classes} classes: {class_names}")
+    print(f"Training images: {len(train_dataset)}")
+    print(f"Validation images: {len(val_dataset)}")
+
+    return train_loader, val_loader, num_classes, class_names
+
