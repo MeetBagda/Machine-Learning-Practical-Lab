@@ -6,6 +6,8 @@ from torch.utils.data import DataLoader
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
 
 # --- 1. Define the Neural Network Architecture (Simple CNN) ---
 class SimpleCNN(nn.Module):
@@ -162,7 +164,152 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
     print('Finished Training')
     return train_losses, val_losses, val_accuracies
 
-# --- 4. Main Execution Block ---
+# --- 4. Comprehensive Model Evaluation and Visualization ---
+def evaluate_model_comprehensive(model, val_loader, class_names, device='cpu'):
+    """
+    Comprehensive evaluation of the model with detailed visualizations
+    """
+    model.eval()
+    all_predictions = []
+    all_labels = []
+    all_probabilities = []
+    
+    with torch.no_grad():
+        for inputs, labels in val_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            probabilities = torch.nn.functional.softmax(outputs, dim=1)
+            _, predicted = torch.max(outputs.data, 1)
+            
+            all_predictions.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+            all_probabilities.extend(probabilities.cpu().numpy())
+    
+    return np.array(all_predictions), np.array(all_labels), np.array(all_probabilities)
+
+def plot_confusion_matrix(y_true, y_pred, class_names):
+    """
+    Plot confusion matrix
+    """
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=class_names, yticklabels=class_names)
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.tight_layout()
+    plt.show()
+
+def plot_class_accuracy(y_true, y_pred, class_names):
+    """
+    Plot per-class accuracy
+    """
+    cm = confusion_matrix(y_true, y_pred)
+    class_accuracy = cm.diagonal() / cm.sum(axis=1)
+    
+    plt.figure(figsize=(12, 6))
+    bars = plt.bar(class_names, class_accuracy * 100)
+    plt.title('Per-Class Accuracy')
+    plt.xlabel('Classes')
+    plt.ylabel('Accuracy (%)')
+    plt.xticks(rotation=45)
+    
+    # Add value labels on bars
+    for bar, acc in zip(bars, class_accuracy):
+        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1, 
+                f'{acc*100:.1f}%', ha='center', va='bottom')
+    
+    plt.tight_layout()
+    plt.show()
+
+def visualize_predictions_with_confidence(model, val_loader, class_names, device='cpu', num_samples=16):
+    """
+    Visualize sample predictions with confidence scores
+    """
+    model.eval()
+    dataiter = iter(val_loader)
+    images, labels = next(dataiter)
+    images, labels = images.to(device), labels.to(device)
+    
+    outputs = model(images)
+    probabilities = torch.nn.functional.softmax(outputs, dim=1)
+    confidences, predicted = torch.max(probabilities, 1)
+    
+    # Function to unnormalize and show an image
+    def imshow_with_confidence(inp, title=None, confidence=None):
+        """Display image with confidence score"""
+        inp = inp.cpu().numpy().transpose((1, 2, 0))
+        mean = np.array([0.4914, 0.4822, 0.4465])
+        std = np.array([0.2023, 0.1994, 0.2010])
+        inp = std * inp + mean
+        inp = np.clip(inp, 0, 1)
+        return inp
+    
+    # Display predictions
+    fig, axes = plt.subplots(4, 4, figsize=(15, 15))
+    fig.suptitle('Model Predictions with Confidence Scores', fontsize=16)
+    
+    for idx in range(min(num_samples, len(images))):
+        row = idx // 4
+        col = idx % 4
+        
+        img = imshow_with_confidence(images[idx])
+        axes[row, col].imshow(img)
+        
+        pred_class = class_names[predicted[idx]]
+        true_class = class_names[labels[idx]]
+        confidence = confidences[idx].item() * 100
+        
+        # Color code: green for correct, red for incorrect
+        color = 'green' if predicted[idx] == labels[idx] else 'red'
+        
+        axes[row, col].set_title(f'Pred: {pred_class}\nTrue: {true_class}\nConf: {confidence:.1f}%', 
+                                color=color, fontsize=10)
+        axes[row, col].axis('off')
+    
+    plt.tight_layout()
+    plt.show()
+
+def plot_top_predictions_analysis(probabilities, labels, predictions, class_names):
+    """
+    Analyze and plot top prediction confidence distribution
+    """
+    correct_mask = (predictions == labels)
+    correct_confidences = np.max(probabilities[correct_mask], axis=1)
+    incorrect_confidences = np.max(probabilities[~correct_mask], axis=1)
+    
+    plt.figure(figsize=(12, 5))
+    
+    plt.subplot(1, 2, 1)
+    plt.hist(correct_confidences, bins=20, alpha=0.7, label='Correct Predictions', color='green')
+    plt.hist(incorrect_confidences, bins=20, alpha=0.7, label='Incorrect Predictions', color='red')
+    plt.xlabel('Confidence Score')
+    plt.ylabel('Frequency')
+    plt.title('Confidence Distribution')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    plt.subplot(1, 2, 2)
+    accuracy = len(correct_confidences) / (len(correct_confidences) + len(incorrect_confidences))
+    metrics = [
+        f'Overall Accuracy: {accuracy*100:.2f}%',
+        f'Avg Correct Confidence: {np.mean(correct_confidences)*100:.2f}%',
+        f'Avg Incorrect Confidence: {np.mean(incorrect_confidences)*100:.2f}%',
+        f'Total Samples: {len(labels)}'
+    ]
+    
+    plt.text(0.1, 0.7, '\n'.join(metrics), fontsize=12, 
+             bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgray"))
+    plt.xlim(0, 1)
+    plt.ylim(0, 1)
+    plt.axis('off')
+    plt.title('Model Performance Summary')
+    
+    plt.tight_layout()
+    plt.show()
+
+# --- 5. Main Execution Block ---
 if __name__ == "__main__":
     # Check for GPU availability
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -216,6 +363,34 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
+
+    # --- Comprehensive Model Evaluation and Visualization ---
+    print("\n--- Comprehensive Model Evaluation ---")
+    
+    # Get comprehensive predictions
+    all_predictions, all_labels, all_probabilities = evaluate_model_comprehensive(
+        model, val_loader, class_names, device
+    )
+    
+    # Plot confusion matrix
+    print("Generating confusion matrix...")
+    plot_confusion_matrix(all_labels, all_predictions, class_names)
+    
+    # Plot per-class accuracy
+    print("Generating per-class accuracy chart...")
+    plot_class_accuracy(all_labels, all_predictions, class_names)
+    
+    # Visualize sample predictions with confidence
+    print("Generating sample predictions with confidence scores...")
+    visualize_predictions_with_confidence(model, val_loader, class_names, device)
+    
+    # Plot confidence analysis
+    print("Generating confidence distribution analysis...")
+    plot_top_predictions_analysis(all_probabilities, all_labels, all_predictions, class_names)
+    
+    # Print detailed classification report
+    print("\n--- Detailed Classification Report ---")
+    print(classification_report(all_labels, all_predictions, target_names=class_names))
 
     # --- Simple Test/Prediction Example (using a few validation images) ---
     print("\n--- Making a few predictions on validation set ---")
