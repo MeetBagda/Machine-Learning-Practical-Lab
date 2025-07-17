@@ -19,6 +19,7 @@ def relu(x):
     """
     return np.maximum(0, x)
 
+# 2. The perceptron class
 
 class Perceptron: 
     def __init__(self, num_inputs, activation_fn=sigmoid):
@@ -69,3 +70,35 @@ class Perceptron:
         return output
 
 
+# 3. Testing the perceptron
+
+if __name__ == "__main__":
+    print("Testing Activation Functions")
+    x_test = np.array([-5.0, 0.0, 5.0])
+    print(f"Sigmoid({x_test}): {sigmoid(x_test)}")
+    print(f"Relu({x_test}): {relu(x_test)}")
+    print("-"*30)
+
+    print("\n--- Testign Nueron ---")
+    
+    my_nueron = Perceptron(num_inputs=3, activation_fn=sigmoid)
+
+    # example 1: pass the input data
+    input_data_1 = np.array([0.5, 0.2, 0.8])
+    print("\n Processing input data 1:")
+    output_1 = my_nueron.forward(input_data_1)
+    print(f"Final Output for input 1: {output_1:.4f}")
+
+    # Example 2: Another set of input data
+    input_data_2 = np.array([0.1, 0.9, -0.3])
+    print("\nProcessing Input Data 2:")
+    output_2 = my_nueron.forward(input_data_2)
+    print(f"Final output for input 2: {output_2:.4f}")
+
+    # Example 3: Test with ReLU activation
+    print("\n--- Testing Perceptron with ReLU ---")
+    my_relu_neuron = Perceptron(num_inputs=2, activation_fn=relu)
+    input_data_relu = np.array([1.0, -0.5])
+    print("\nProcessing Input Data (ReLU):")
+    output_relu = my_relu_neuron.forward(input_data_relu)
+    print(f"Final output for ReLU input: {output_relu:.4f}")
